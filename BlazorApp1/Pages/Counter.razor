@@ -1,0 +1,58 @@
+﻿@page "/counter"
+@using RestSharp
+@inject IBlazorDbFactory _dbFactory
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    private int currentCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var client = new RestClient("https://jsonplaceholder.typicode.com");
+        var request = new RestRequest("posts", Method.Get);
+
+        var result = await client.GetAsync<List<TheData>>(request);
+
+        var manager = await _dbFactory.GetDbManager("Test");
+
+
+
+        foreach (var item in result)
+        {
+            Console.WriteLine($"**** Item = {item.title}");
+
+            await manager.AddRecord(new StoreRecord<object>()
+                {
+                    StoreName = "Posts",
+                    //Record = new { Name = "MyName", Age = 20 }
+                    Record = new { title = item.title, body = item.body }
+                });
+        }
+
+        var s = "stop";
+
+    }
+
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    public class TheData
+    {
+        public int userId { get; set; }
+        public int id { get; set; }
+        public string title { get; set; }
+        public string body { get; set; }
+    }
+}
+
